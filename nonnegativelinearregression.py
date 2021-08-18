@@ -81,3 +81,17 @@ if __name__ == '__main__':
         xsum+= ak*x
     
     xsol = (1/Ak)*xsum 
+
+    print(xsol)
+    print(ktotal)
+    norm(xsol@A.T,2)**2/2-sum(xsol)
+
+    """
+    Competing algorithm
+    """
+    from scipy.optimize import nnls
+    from numpy.linalg import inv
+    import math
+
+    S=scipy.optimize.nnls(A/math.sqrt(2) ,A@inv(A.T@A)@np.ones(n)/math.sqrt(2) ,maxiter=None)
+    S
