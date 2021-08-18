@@ -4,7 +4,9 @@ nonnegative linear regression
 """
    
 import numpy as np 
-    
+from numpy import array  
+from numpy.linalg import norm 
+
 def init_all(eps, n):
     xbar = np.zeros(n) 
     xkm = np.zeros(n)  
@@ -55,8 +57,9 @@ if __name__ == '__main__':
     scaling_vector = compute_scaling(A)
     
     for k in range(ktotal): 
-        # sample jk 
-        jk = np.random.randint(0, n)
+        # sample jk from multinomial distribution
+        random=np.random.multinomial(1, [1/n]*n)
+        jk = np.min(np.where(random==1))
         pjk = 1/n
         
         # update y 
