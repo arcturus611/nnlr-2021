@@ -6,6 +6,7 @@ nonnegative linear regression
 import numpy as np 
 from numpy import array  
 from numpy.linalg import norm 
+import matplotlib.pyplot as plt 
 
 def init_all(eps, n):
     xbar = np.zeros(n) 
@@ -46,52 +47,80 @@ def update_y(A_sum_ai_xibar, A, ak, Ak, xbar):
     y = np.where(y_temp>0, y_temp, 0)
     return y, A_sum_ai_xibar
 
+#%%
 if __name__ == '__main__': 
-    eps = 0.001 
-    n = 5 # input dimension 
-    m = 7   
+    eps = 0.0001 
+    n = 50 # input dimension 
+    m = 70   
     A = np.random.rand(m, n)
     xsum = 0 
 
+#%%
     (xbar, xkm, x, ktotal, ak, Ak, A_sum_ai_xibar, v) = init_all(eps, n)
     scaling_vector = compute_scaling(A)
-    
+    our_result = np.zeros(ktotal)
+    x_norm = np.zeros(ktotal)
+    y_norm = np.zeros(ktotal)
+    v_norm = np.zeros(ktotal)
+    xsum_norm = np.zeros(ktotal)
+#%%         
     for k in range(ktotal): 
         # sample jk from multinomial distribution
-        random=np.random.multinomial(1, [1/n]*n)
-        jk = np.min(np.where(random==1))
+        randomseed=np.random.multinomial(1, [1/n]*n)
+        jk = np.min(np.where(randomseed==1))
         pjk = 1/n
-        
+#%%         
+
         # update y 
         (y, A_sum_ai_xibar) = update_y(A_sum_ai_xibar, A, ak, Ak, xbar)
-        
+        y_norm[k]  = norm(y, 2)
         # update v 
         v = update_v(jk, pjk, A, y, v)
-        
+        v_norm[k]  = norm(v, 2)
         # update x
         x = update_x(v, jk, xkm, scaling_vector[jk])
+        x_norm[k]  = norm(x, 2)
+#%%         
         
         #update a 
         (Ak, akp) = update_ak_Ak(Ak, ak) 
+#%%         
         
         #update xbar 
         xbar = update_xbar(x, xkm, ak, akp) 
-        
+#%%         
+                        
         #compute running sum 
         xsum+= ak*x
-    
-    xsol = (1/Ak)*xsum 
+        xsum_norm[k] = norm(xsum, 2)
+        # update ak  
+        ak = akp 
+        
+        xsol_temp = (1/(Ak-ak))*xsum 
+        our_result[k] = norm(A.dot(xsol_temp),2)**2/2-sum(xsol_temp)
 
-    print(xsol)
-    print(ktotal)
-    norm(xsol@A.T,2)**2/2-sum(xsol)
+        
+    
+    xsol = (1/(Ak-ak))*xsum 
+
+    print("our result is "+ str(our_result[ktotal-1]))
+    plt.plot(range(ktotal), our_result, 'b', range(ktotal), x_norm, 'r') 
+
+    # print(xsol)
+    # print(ktotal)
+    # norm(xsol@A.T,2)**2/2-sum(xsol)
 
     """
     Competing algorithm
     """
+    import scipy
     from scipy.optimize import nnls
     from numpy.linalg import inv
     import math
 
-    S=scipy.optimize.nnls(A/math.sqrt(2) ,A@inv(A.T@A)@np.ones(n)/math.sqrt(2) ,maxiter=None)
-    S
+    S=scipy.optimize.nnls(A/math.sqrt(2) ,A@inv(A.T@A)@np.ones(n)/math.sqrt(2) ,maxiter=ktotal)
+   # S(#2)
+    
+    alg2_result = S[1]**2-norm(A@inv(A.T@A)@np.ones(n)/math.sqrt(2),2)**2
+    
+    print("their result is "+ str(alg2_result))
