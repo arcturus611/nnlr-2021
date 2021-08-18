@@ -7,7 +7,12 @@ import numpy as np
 from numpy import array  
 from numpy.linalg import norm 
 import matplotlib.pyplot as plt 
+import scipy
+from scipy.optimize import nnls
+from numpy.linalg import inv
+import math
 
+#%%
 def init_all(eps, n):
     xbar = np.zeros(n) 
     xkm = np.zeros(n)  
@@ -44,14 +49,14 @@ def update_ak_Ak(Ak, ak):
 def update_y(A_sum_ai_xibar, A, ak, Ak, xbar):
     A_sum_ai_xibar+= A.dot(ak*xbar) #A \sum_{i = 1}^{k} ai xbar_{i-1}
     y_temp = (1/Ak)*A_sum_ai_xibar 
-    y = np.where(y_temp>0, y_temp, 0)
+    y = np.maximum(0, y_temp) #np.where(y_temp>0, y_temp, 0)
     return y, A_sum_ai_xibar
 
 #%%
 if __name__ == '__main__': 
-    eps = 0.0001 
-    n = 50 # input dimension 
-    m = 70   
+    eps = 0.001 
+    n = 7 # input dimension 
+    m = 300   
     A = np.random.rand(m, n)
     xsum = 0 
 
@@ -63,6 +68,10 @@ if __name__ == '__main__':
     y_norm = np.zeros(ktotal)
     v_norm = np.zeros(ktotal)
     xsum_norm = np.zeros(ktotal)
+    # Xmatrix = np.zeros((n, ktotal))
+    Akarray = np.zeros(ktotal)
+    # ktotal = 1
+    Akarray[0]=Ak
 #%%         
     for k in range(ktotal): 
         # sample jk from multinomial distribution
@@ -84,12 +93,15 @@ if __name__ == '__main__':
         
         #update a 
         (Ak, akp) = update_ak_Ak(Ak, ak) 
+        Akarray[k] = Ak
 #%%         
         
         #update xbar 
         xbar = update_xbar(x, xkm, ak, akp) 
-#%%         
-                        
+#%%      
+        # update xkm 
+        xkm = x 
+#%%                        
         #compute running sum 
         xsum+= ak*x
         xsum_norm[k] = norm(xsum, 2)
@@ -98,29 +110,22 @@ if __name__ == '__main__':
         
         xsol_temp = (1/(Ak-ak))*xsum 
         our_result[k] = norm(A.dot(xsol_temp),2)**2/2-sum(xsol_temp)
-
-        
     
     xsol = (1/(Ak-ak))*xsum 
 
     print("our result is "+ str(our_result[ktotal-1]))
     plt.plot(range(ktotal), our_result, 'b', range(ktotal), x_norm, 'r') 
+    S=scipy.optimize.nnls(A/math.sqrt(2), A@inv(A.T@A)@np.ones(n)/math.sqrt(2), maxiter=ktotal)
+    alg2_result = S[1]**2-norm(A@inv(A.T@A)@np.ones(n)/math.sqrt(2),2)**2
+    print("their result is "+ str(alg2_result))
 
     # print(xsol)
     # print(ktotal)
     # norm(xsol@A.T,2)**2/2-sum(xsol)
 
-    """
-    Competing algorithm
-    """
-    import scipy
-    from scipy.optimize import nnls
-    from numpy.linalg import inv
-    import math
+   #  """
+   # #  Competing algorithm
+   # #  """
+     
 
-    S=scipy.optimize.nnls(A/math.sqrt(2) ,A@inv(A.T@A)@np.ones(n)/math.sqrt(2) ,maxiter=ktotal)
-   # S(#2)
-    
-    alg2_result = S[1]**2-norm(A@inv(A.T@A)@np.ones(n)/math.sqrt(2),2)**2
-    
-    print("their result is "+ str(alg2_result))
+
