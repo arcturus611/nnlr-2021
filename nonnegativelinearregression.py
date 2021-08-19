@@ -24,8 +24,9 @@ def init_all(eps, n):
     v = np.zeros(n)
     return xbar, xkm, x, ktotal, ak, Ak, A_sum_ai_xibar, v
 
-def update_v(jk, pjk, A, y, v):
-    v[jk]+= (ak/pjk)*((A.T).dot(y) - 1)[jk]
+# Add a scaling n in this code
+def update_v(jk, pjk, A, y, v, ak): 
+    v[jk]+= (ak/n*pjk)*((A.T).dot(y) - 1)[jk]
     return v
 
 def compute_scaling(A):
@@ -54,9 +55,9 @@ def update_y(A_sum_ai_xibar, A, ak, Ak, xbar):
 
 #%%
 if __name__ == '__main__': 
-    eps = 0.001 
-    n = 7 # input dimension 
-    m = 300   
+    eps = 0.000001 
+    n = 100 # input dimension 
+    m = 500   
     A = np.random.rand(m, n)
     xsum = 0 
 
@@ -84,7 +85,7 @@ if __name__ == '__main__':
         (y, A_sum_ai_xibar) = update_y(A_sum_ai_xibar, A, ak, Ak, xbar)
         y_norm[k]  = norm(y, 2)
         # update v 
-        v = update_v(jk, pjk, A, y, v)
+        v = update_v(jk, pjk, A, y, v, ak)
         v_norm[k]  = norm(v, 2)
         # update x
         x = update_x(v, jk, xkm, scaling_vector[jk])
@@ -127,5 +128,3 @@ if __name__ == '__main__':
    # #  Competing algorithm
    # #  """
      
-
-
