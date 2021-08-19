@@ -26,7 +26,7 @@ def init_all(eps, n):
 
 # Add a scaling n in this code
 def update_v(jk, pjk, A, y, v, ak): 
-    v[jk]+= (ak/n*pjk)*((A.T).dot(y) - 1)[jk]
+    v[jk]+= (ak/n/pjk)*((A.T).dot(y) - 1/n)[jk]
     return v
 
 def compute_scaling(A):
