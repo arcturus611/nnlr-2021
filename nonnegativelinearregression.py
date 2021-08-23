@@ -60,7 +60,7 @@ def compute_scaling(A):
 
 def update_x(v, jk, xkm, scaling): 
     x = xkm 
-    x[jk]= np.max((scaling*v[jk], 0))
+    x[jk]= min(np.max((scaling*v[jk], 0)),-scaling)
     return x      
 
 def update_x_parallel(v, svec): 
@@ -85,9 +85,9 @@ def update_y(A_sum_ai_xibar, A, ak, Ak, xbar):
 
 #%%
 if __name__ == '__main__': 
-    eps = 0.001 
-    n = 300 # input dimension 
-    m = 2000   
+    eps = 0.0001 
+    n = 10 # input dimension 
+    m = 200   
     A = np.random.rand(m, n) # we want $min A_ij = 1$ 
     A = A + 1
     xsum = 0 
@@ -110,29 +110,30 @@ if __name__ == '__main__':
         (y, A_sum_ai_xibar) = update_y(A_sum_ai_xibar, A, ak, Ak, xbar)
         y_norm[k]  = norm(y, 2)
         
-        if (k==1):
-            v = update_v_parallel(A, y, v, ak)
-            x = update_x_parallel(v, scaling_vector)
-        else: 
+        #if (k==1):
+        #    v = update_v_parallel(A, y, v, ak)
+        #    x = update_x_parallel(v, scaling_vector)
+        #else: 
         # sample jk from multinomial distribution
-            randomseed=np.random.multinomial(1, [1/n]*n)
-            jk = np.min(np.where(randomseed==1))
-            pjk = 1/n
-#%%         #%%        
+        randomseed=np.random.multinomial(1, [1/n]*n)
+        jk = np.min(np.where(randomseed==1))
+        pjk = 1/n
+#%%         #%% 
+
+        #update v parallelly 
+           # v = update_v_parallel(A, y, v, ak)
         # # update v 
-            v = update_v(jk, pjk, A, y, v, ak)
-            v_norm[k]  = norm(v, 2)       
+        v = update_v(jk, pjk, A, y, v, ak)
+        v_norm[k]  = norm(v, 2)       
                     
-            x = update_x(v, jk, xkm, scaling_vector[jk])
+        x = update_x(v, jk, xkm, scaling_vector[jk])
 
 #%%         
         #update x parallelly 
-        # x = update_x_parallel(v, scaling_vector)
-            x_norm[k]  = norm(x, 2)
+         #   x = update_x_parallel(v, scaling_vector)
+        x_norm[k]  = norm(x, 2)
 #%%         
 #%% 
-        #update v parallelly 
-        # v = update_v_parallel(A, y, v, ak)
         
 
 #%%   
