@@ -28,6 +28,7 @@ import scipy
 from scipy.optimize import nnls
 from numpy.linalg import inv
 import math
+from keras.datasets import mnist # Import mnist data set.
 
 #%%
 def init_all(eps, n):
@@ -83,13 +84,36 @@ def update_y(A_sum_ai_xibar, A, ak, Ak, xbar):
     y = np.maximum(0, y_temp) #np.where(y_temp>0, y_temp, 0)
     return y, A_sum_ai_xibar
 
+# Oct 31: rescaling
+
+def remove_col1(A,b):
+    s=A.T@b
+    B=A[:,s>0]
+    s=s[s>0]
+    A=B/s
+    return A, B, s
+
+
 #%%
 if __name__ == '__main__': 
-    eps = 0.0001 
-    n = 10 # input dimension 
-    m = 200   
-    A = np.random.rand(m, n) # we want $min A_ij = 1$ 
-    A = A + 1
+    eps = 0.00000001 
+    #n = 717 # input dimension 
+    #m = 60000 # Number of data
+    
+    #This is A is random positive and objective is max_x ||Ax||^2/2-1^T x case.
+    #A = np.random.rand(200, 20) 
+    
+    #Mnist data example
+    (train_X, train_y), (test_X, test_y) = mnist.load_data()
+    #b = train_y
+    #A=np.array(train_X.reshape(60000,28*28))
+    
+    # b can also be random and negative. m>>n.
+    b=np.random.uniform(-0.3,1,10)
+    A=np.random.rand(10,500)
+    #(A,B,s)=remove_col1(A,b)
+    (m,n)=A.shape
+    # Also need to scale b
     xsum = 0 
 
 #%%
@@ -121,23 +145,23 @@ if __name__ == '__main__':
 #%%         #%% 
 
         #update v parallelly 
-           # v = update_v_parallel(A, y, v, ak)
+        #v = update_v_parallel(A, y, v, ak)
         # # update v 
         v = update_v(jk, pjk, A, y, v, ak)
-        v_norm[k]  = norm(v, 2)       
-                    
+        #v_norm[k]  = norm(v, 2)       
+        
+        # update x
         x = update_x(v, jk, xkm, scaling_vector[jk])
 
 #%%         
         #update x parallelly 
-         #   x = update_x_parallel(v, scaling_vector)
-        x_norm[k]  = norm(x, 2)
+        #x = update_x_parallel(v, scaling_vector)
+        #x_norm[k]  = norm(x, 2)
 #%%         
 #%% 
         
 
 #%%   
-        # update x
 
         
         #update a 
@@ -158,17 +182,37 @@ if __name__ == '__main__':
         ak = akp 
         
         xsol_temp = (1/(Ak-ak))*xsum 
-        our_result[k] = norm(A.dot(xsol_temp),2)**2/2-sum(xsol_temp)
+        our_result[k] = norm(B.dot(xsol_temp/s)-b,2)**2
+        #our_result[k] = norm(A.dot(xsol_temp),2)**2/2-sum(xsol_temp)
     
     xsol = (1/(Ak-ak))*xsum 
 
     print("our result is "+ str(our_result[ktotal-1]))
     plt.plot(range(ktotal), our_result, 'b') 
-    S=scipy.optimize.nnls(A/math.sqrt(2), A@inv(A.T@A)@np.ones(n)/math.sqrt(2), maxiter=ktotal)
-    alg2_result = S[1]**2-norm(A@inv(A.T@A)@np.ones(n)/math.sqrt(2),2)**2
+    
+    S=scipy.optimize.nnls(B, b, maxiter=ktotal)
+    S=scipy.optimize.nnls(B, b, maxiter=30) # This method does not require many iterations.
+    alg2_result = S[1]**2
     print("their result is "+ str(alg2_result))
-
+    print(norm(B@S[0]-b,2)**2)
+    
+    # Also need to plot comparing algorithm's result.
+    
     # print(xsol)
+    # print(ktotal)
+    # norm(xsol@A.T,2)**2/2-sum(xsol)
+
+   #  """
+   # #  Competing algorithm
+   # #  """
+    
+    # Some analysis
+    print(A.shape)
+    #print(s)
+    print(norm(A.dot(xsol),2)**2-sum(xsol))
+    print(sum(xsol==0))
+    print(norm(A.dot(S[0]),2)**2-sum(S[0]))
+    
     # print(ktotal)
     # norm(xsol@A.T,2)**2/2-sum(xsol)
 
