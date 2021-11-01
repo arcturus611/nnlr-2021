@@ -111,7 +111,7 @@ if __name__ == '__main__':
     # b can also be random and negative. m>>n.
     b=np.random.uniform(-0.3,1,10)
     A=np.random.rand(10,500)
-    #(A,B,s)=remove_col1(A,b)
+    (A,B,s)=remove_col1(A,b)
     (m,n)=A.shape
     # Also need to scale b
     xsum = 0 
