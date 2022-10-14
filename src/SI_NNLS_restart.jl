@@ -1,12 +1,12 @@
 using IterativeSolvers
 
-function SI_NNLS_restart_v3(C::SparseMatrixCSC, b::Vector{Float64}, C_b::Vector{Float64}, x0::Vector{Float64}, C_x0::Vector{Float64}, blocksize::Int64, K::Int64, total_time::Float64,
+function SI_NNLS_restart(C::SparseMatrixCSC, b::Vector{Float64}, C_b::Vector{Float64}, x0::Vector{Float64}, C_x0::Vector{Float64}, blocksize::Int64, K::Int64, total_time::Float64,
                                         num_restart::Int64, freq::Int64, restart_ratio::Float64, file_path::String, ϵ)
     t1 = time()
     results = Results()
     col_norm_square = norm.(eachcol(C)).^2
 
-    init_metric = first_order_optv3(C, b, x0, C_x0, C_b, col_norm_square)
+    init_metric = first_order_opt(C, b, x0, C_x0, C_b, col_norm_square)
     init_epoch = 0
     init_time = 0.0
 
@@ -17,17 +17,18 @@ function SI_NNLS_restart_v3(C::SparseMatrixCSC, b::Vector{Float64}, C_b::Vector{
     ubs = 1.0 ./ col_norm_square
     for i = 1:num_restart
         # x0, C_x0, init_metric, td = SI_NNLS(C, x0, C_x0, K, freq, init_metric, γ, blocks, row_idxs, extra_term, ηs, ubs, sliced_Cs)
-        x0, C_x0, init_metric, init_epoch, init_time = SI_NNLS_v3(C, b, C_b, x0, C_x0, blocks, row_idxs, sliced_Cs, ηs, K, total_time, freq, init_metric, results, init_epoch, init_time, restart_ratio, ϵ, col_norm_square)
+        x0, C_x0, init_metric, init_epoch, init_time = SI_NNLS(C, b, C_b, x0, C_x0, blocks, row_idxs, sliced_Cs, ηs, K, total_time, freq, init_metric, results, init_epoch, init_time, restart_ratio, ϵ, col_norm_square)
         @info "restart epoch: $i"
         if init_time >= total_time || init_metric < ϵ
             break
         end
     end
-    exportresultstoCSV(results, file_path)
+    return x0, init_metric, init_epoch
+    #exportresultstoCSV(results, file_path)
 end
 
 
-function SI_NNLS_v3(C::SparseMatrixCSC, b::Vector{Float64}, C_b::Vector{Float64}, x0::Vector{Float64}, C_x0::Vector{Float64}, blocks::Array{UnitRange{Int}}, row_idxs::Array{Vector{Int}}, sliced_Cs, ηs, K::Int64, total_time::Float64, freq::Int64, init_metric::Float64, results::Results, init_epoch::Int64, init_time::Float64, restart_ratio, ϵ, col_norm_square)
+function SI_NNLS(C::SparseMatrixCSC, b::Vector{Float64}, C_b::Vector{Float64}, x0::Vector{Float64}, C_x0::Vector{Float64}, blocks::Array{UnitRange{Int}}, row_idxs::Array{Vector{Int}}, sliced_Cs, ηs, K::Int64, total_time::Float64, freq::Int64, init_metric::Float64, results::Results, init_epoch::Int64, init_time::Float64, restart_ratio, ϵ, col_norm_square)
 
     t0 = time()
     m, n = size(C)
@@ -89,7 +90,7 @@ function SI_NNLS_v3(C::SparseMatrixCSC, b::Vector{Float64}, C_b::Vector{Float64}
         if k % (freq * num_blks) == 0
             x̃ = x + 1.0/prev_A * r
             C_x̃ = C * x̃
-            metric = first_order_optv3(C, b, x̃, C_x̃, C_b, col_norm_square)
+            metric = first_order_opt(C, b, x̃, C_x̃, C_b, col_norm_square)
             func_value = 0.5 * norm(C_x̃ - b)^2
             td = time() - t0
             @info "k: $(k÷num_blks), time: $(td+init_time), metric: $metric,  func_value: $func_value"

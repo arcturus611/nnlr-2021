@@ -141,7 +141,7 @@ function reformulation_sparse(A::SparseMatrixCSC, b::Vector{Float64})
     return Â, Ã, A_T_b, non_zero_col_norm
 end
 
-function reformulation_sparsev2(A::SparseMatrixCSC, b::Vector{Float64})
+function reformulation_sparse(A::SparseMatrixCSC, b::Vector{Float64})
     col_norm = norm.(eachcol(A))
     non_zero_col_idx = Vector{Int64}()
     non_zero_col_norm = Vector{Float64}()
@@ -355,7 +355,7 @@ function first_order_opt(C, b, x, C_x, C_b)
     return val
 end
 
-function first_order_optv3(C, b, x, C_x, C_b, col_norm_square)
+function first_order_opt(C, b, x, C_x, C_b, col_norm_square)
     tmp = (C_x'*C)[:]
     val = norm(x - max.(x - (tmp - C_b) ./ col_norm_square, 0.0))
     return val

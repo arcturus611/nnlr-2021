@@ -51,6 +51,6 @@ num_restart = 2000
         @info "SI_NNLS (bs=$bs) without Restart Running on $(dataset) dataset."
         @info "--------------------------------------------------"
         file_path = "$(outputdir)/$(dataset)_SINNLS_nonrestart_$(bs)_$(timestamp).csv"
-        SI_NNLS_restart_v3(C, b, C_b, x0, C_x0, bs, K, total_time, num_restart, freq, restart_ratio, file_path, ϵ)
+        SI_NNLS_restart(C, b, C_b, x0, C_x0, bs, K, total_time, num_restart, freq, restart_ratio, file_path, ϵ)
     end
 
